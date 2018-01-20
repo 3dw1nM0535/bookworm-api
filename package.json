@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "nodemon --exec babel-node -- src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +16,7 @@
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
-    "babel-preset-env": "^1.6.1"
+    "babel-preset-env": "^1.6.1",
+    "nodemon": "^1.14.11"
   }
 }

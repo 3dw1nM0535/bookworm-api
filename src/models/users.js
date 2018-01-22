@@ -18,6 +18,10 @@ const schema = new mongoose.Schema({
   confirmed: {
     type: Boolean,
     default: false
+  },
+  confirmationToken: {
+    type: String,
+    default: ''
   }
 }, {timestamps: true});
 
@@ -30,6 +34,16 @@ schema.methods.isValidPassword = function isValidPassword (password) {
   return bcrypt.compareSync(password, this.passwordHash);
 };
 
+// set email confirmation token
+schema.methods.setConfirmationToken = function setConfirmationToken() {
+  this.confirmationToken = this.generateJWT();
+};
+
+// generate email confirmation token url
+schema.methods.generateConfirmationUrl = function generateConfirmationUrl() {
+  return `${process.env.HOST}/confirmation/${this.confirmationToken}`;
+};
+
 // set password
 schema.methods.setPassword = function setPassword (password) {
   this.passwordHash = bcrypt.hashSync(password, 10);
@@ -38,7 +52,8 @@ schema.methods.setPassword = function setPassword (password) {
 // generate web token for user credentials encryption
 schema.methods.generateJWT = function generateJWT () {
   return jwt.sign({
-    email: this.email
+    email: this.email,
+    confirmed: this.confirmed
   }, process.env.SECRET_KEY);
 };
 

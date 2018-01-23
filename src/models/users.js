@@ -44,6 +44,22 @@ schema.methods.generateConfirmationUrl = function generateConfirmationUrl() {
   return `${process.env.HOST}/confirmation/${this.confirmationToken}`;
 };
 
+// generate password reset link
+schema.methods.generateResetPasswordLink = function generateResetPasswordLink() {
+  return `${process.env.HOST}/reset-password/${this.generateResetPasswordToken()}`;
+};
+
+// generate password reset token
+schema.methods.generateResetPasswordToken = function generateResetPasswordToken() {
+  return jwt.sign(
+    {
+    _id: this._id
+    },
+    process.env.SECRET_KEY,
+    { expiresIn: '1h' }
+  );
+};
+
 // set password
 schema.methods.setPassword = function setPassword (password) {
   this.passwordHash = bcrypt.hashSync(password, 10);

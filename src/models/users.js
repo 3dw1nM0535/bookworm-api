@@ -85,5 +85,4 @@ schema.methods.toAuthJSON = function toAuthJSON () {
 // uniqueness validation plugin
 schema.plugin(uniqueValidator, { message: 'This email is already taken' });
 
-
 export default mongoose.model('User', schema);

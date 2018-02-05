@@ -1,32 +1,53 @@
 import express from 'express';
+import request from 'request-promise';
+import { parseString } from 'xml2js';
+
+import authenticate from '../middlewares/authenticate';
 
 const router = express.Router();
 
+// route middleware
+router.use(authenticate);
+
 router.get('/search', (req, res) => {
-	res.json({
-		books: [
-			{
-				goodreadsId: 1,
-				title: 'How To Be Perfect',
-				authors: 'Karthian Brands',
-				covers: [
-					'https://spark.adobe.com/images/landing/examples/how-to-book-cover.jpg',
-					'https://images.custommade.com/e8s7ryMxDLbQGsmvN3GaQh-78h0=/custommade-photosets/248743/248743.906190.jpg'
-				],
-				pages: 198,
-			},
-			{
-				goodreadsId: 2,
-				title: 'Red Clocks',
-				authors: 'Jerome K. Jerome',
-				covers: [
-					'https://images.gr-assets.com/books/1494345016l/35099035.jpg',
-					'http://www.creativindie.com/wp-content/uploads/2013/10/Enchantment-Book-Cover-Best-Seller1.jpg'
-				],
-				pages: 256
-			}
-		]
-	});
+  request.get(`https://www.goodreads.com/search/index.xml?key=6c7SaFDrSUBgVAmufbwOA&q=${req.query.q}`).then(
+    result => parseString(result, (err, goodreadsResult) => {
+      res.json({ books: goodreadsResult.GoodreadsResponse.search[0].results[0].work.map(work => 
+        ({
+          goodreadsId: work.best_book[0].id[0]._,
+          title: work.best_book[0].title[0],
+          authors: work.best_book[0].author[0].name[0],
+          covers: [work.best_book[0].image_url[0]]
+        })
+      ) });
+    })
+  );
+
+	/**
+   * res.json({
+     books: [{
+         goodreadsId: 1,
+         title: 'How To Be Perfect',
+         authors: 'Karthian Brands',
+         covers: [
+           'https://spark.adobe.com/images/landing/examples/how-to-book-cover.jpg',
+           'https://images.custommade.com/e8s7ryMxDLbQGsmvN3GaQh-78h0=/custommade-photosets/248743/248743.906190.jpg'
+         ],
+         pages: 198,
+       },
+       {
+         goodreadsId: 2,
+         title: 'Red Clocks',
+         authors: 'Jerome K. Jerome',
+         covers: [
+           'https://images.gr-assets.com/books/1494345016l/35099035.jpg',
+           'http://www.creativindie.com/wp-content/uploads/2013/10/Enchantment-Book-Cover-Best-Seller1.jpg'
+         ],
+         pages: 256
+       }
+     ]
+   });
+   */
 });
 
 export default router;

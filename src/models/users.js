@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import uniqueValidator from 'mongoose-unique-validator';
 
-const schema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
@@ -30,27 +30,27 @@ const schema = new mongoose.Schema({
  */
 
 // password comparison
-schema.methods.isValidPassword = function isValidPassword (password) {
+userSchema.methods.isValidPassword = function isValidPassword (password) {
   return bcrypt.compareSync(password, this.passwordHash);
 };
 
 // set email confirmation token
-schema.methods.setConfirmationToken = function setConfirmationToken() {
+userSchema.methods.setConfirmationToken = function setConfirmationToken() {
   this.confirmationToken = this.generateJWT();
 };
 
 // generate email confirmation token url
-schema.methods.generateConfirmationUrl = function generateConfirmationUrl() {
+userSchema.methods.generateConfirmationUrl = function generateConfirmationUrl() {
   return `${process.env.HOST}/confirmation/${this.confirmationToken}`;
 };
 
 // generate password reset link
-schema.methods.generateResetPasswordLink = function generateResetPasswordLink() {
+userSchema.methods.generateResetPasswordLink = function generateResetPasswordLink() {
   return `${process.env.HOST}/reset-password/${this.generateResetPasswordToken()}`;
 };
 
 // generate password reset token
-schema.methods.generateResetPasswordToken = function generateResetPasswordToken() {
+userSchema.methods.generateResetPasswordToken = function generateResetPasswordToken() {
   return jwt.sign(
     {
     _id: this._id
@@ -61,12 +61,12 @@ schema.methods.generateResetPasswordToken = function generateResetPasswordToken(
 };
 
 // set password
-schema.methods.setPassword = function setPassword (password) {
+userSchema.methods.setPassword = function setPassword (password) {
   this.passwordHash = bcrypt.hashSync(password, 10);
 };
 
 // generate web token for user credentials encryption
-schema.methods.generateJWT = function generateJWT () {
+userSchema.methods.generateJWT = function generateJWT () {
   return jwt.sign({
     email: this.email,
     confirmed: this.confirmed
@@ -74,7 +74,7 @@ schema.methods.generateJWT = function generateJWT () {
 };
 
 // token out user credentials
-schema.methods.toAuthJSON = function toAuthJSON () {
+userSchema.methods.toAuthJSON = function toAuthJSON () {
   return {
     email: this.email,
     confirmed: this.confirmed,
@@ -83,6 +83,6 @@ schema.methods.toAuthJSON = function toAuthJSON () {
 }
 
 // uniqueness validation plugin
-schema.plugin(uniqueValidator, { message: 'This email is already taken' });
+userSchema.plugin(uniqueValidator, { message: 'This email is already taken' });
 
-export default mongoose.model('User', schema);
+export default mongoose.model('User', userSchema);

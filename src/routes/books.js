@@ -3,14 +3,26 @@ import request from 'request-promise';
 import { parseString } from 'xml2js';
 
 import authenticate from '../middlewares/authenticate';
+import Book from '../models/books';
+import { parseErrors } from '../utils/parseErrors';
 
 const router = express.Router();
 
 // route middleware
 router.use(authenticate);
 
+router.get('/', (req, res) => {
+  Book.find({userId: req.currentUser._id }).then(books => res.json({ books }));
+});
+
+router.post('/', (req, res) => {
+  Book.create({ ...req.body.book, userId: req.currentUser._id }).then(book => {
+    res.json ({ book }).catch(err => res.status(404).json({ errors: { global: parseErrors(err.errors) } }))
+  })
+})
+
 router.get('/search', (req, res) => {
-  request.get(`https://www.goodreads.com/search/index.xml?key=6c7SaFDrSUBgVAmufbwOA&q=${req.query.q}`).then(
+  request.get(`https://www.goodreads.com/search/index.xml?key=${process.env.GOODREADS_KEY}&q=${req.query.q}`).then(
     result => parseString(result, (err, goodreadsResult) => {
       res.json({ books: goodreadsResult.GoodreadsResponse.search[0].results[0].work.map(work => 
         ({
@@ -22,32 +34,17 @@ router.get('/search', (req, res) => {
       ) });
     })
   );
+});
 
-	/**
-   * res.json({
-     books: [{
-         goodreadsId: 1,
-         title: 'How To Be Perfect',
-         authors: 'Karthian Brands',
-         covers: [
-           'https://spark.adobe.com/images/landing/examples/how-to-book-cover.jpg',
-           'https://images.custommade.com/e8s7ryMxDLbQGsmvN3GaQh-78h0=/custommade-photosets/248743/248743.906190.jpg'
-         ],
-         pages: 198,
-       },
-       {
-         goodreadsId: 2,
-         title: 'Red Clocks',
-         authors: 'Jerome K. Jerome',
-         covers: [
-           'https://images.gr-assets.com/books/1494345016l/35099035.jpg',
-           'http://www.creativindie.com/wp-content/uploads/2013/10/Enchantment-Book-Cover-Best-Seller1.jpg'
-         ],
-         pages: 256
-       }
-     ]
-   });
-   */
+router.get('/fetchPages', (req, res) => {
+  const goodreadsId = req.query.goodreadsId;
+  request.get(`https://www.goodreads.com/book/show.xml?key=${process.env.GOODREADS_KEY}&id=${goodreadsId}`).then(
+    result => parseString(result, (err, goodreadsResult) => {
+      const numPages = goodreadsResult.GoodreadsResponse.book[0].num_pages[0];
+      const pages = numPages ? parseInt(numPages, 10) : 0;
+      res.json({ pages })
+    })
+  );
 });
 
 export default router;
